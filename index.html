@@ -3,429 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Resumen de Pedidos</title>
+    <title>Dashboard de Inventario - Geopark</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
         }
-        .table-container {
-            max-height: 70vh;
-            overflow-y: auto;
+        .table-header {
+            background-color: #4f46e5;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        /* Custom scrollbar for better aesthetics */
-        .table-container::-webkit-scrollbar {
-            width: 8px;
+        .category-header {
+            background-color: #e5e7eb;
+            font-weight: 600;
         }
-        .table-container::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        .status-complete {
+            background-color: #dcfce7; /* green-100 */
         }
-        .table-container::-webkit-scrollbar-thumb {
-            background-color: #94a3b8;
-            border-radius: 10px;
-            border: 2px solid #f1f5f9;
+        .status-partial {
+            background-color: #fef9c3; /* yellow-100 */
+        }
+        .status-needed {
+            background-color: #fee2e2; /* red-100 */
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 1.25rem;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: #4ade80; /* green-400 */
+            height: 100%;
+            text-align: center;
+            color: #1f2937;
+            font-weight: 500;
+            transition: width 0.3s ease-in-out;
+        }
+        /* Estilos para el modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="p-4 sm:p-6 md:p-8">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-slate-900">Dashboard de Resumen de Pedidos</h1>
-            <p class="text-slate-600 mt-1">Análisis de cantidades totales y marcas recomendadas del listado "GEOPARK".</p>
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Dashboard de Inventario Geopark</h1>
+            <p class="text-gray-600 mt-2">Ingresa la cantidad que tienes en "Stock" para ver cuántos artículos necesitas comprar.</p>
         </header>
 
-        <main>
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-semibold text-slate-700">Artículos Únicos</h2>
-                    <p id="unique-items-count" class="text-4xl font-bold text-indigo-600 mt-2">0</p>
-                    <p class="text-slate-500 mt-1">Total de tipos de materiales distintos.</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-semibold text-slate-700">Cantidad Total de Unidades</h2>
-                    <p id="total-quantity-count" class="text-4xl font-bold text-indigo-600 mt-2">0</p>
-                    <p class="text-slate-500 mt-1">Suma de todas las unidades de todos los artículos.</p>
-                </div>
+        <!-- Resumen General -->
+        <div id="summary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+            <div class="bg-blue-100 p-4 rounded-lg">
+                <h3 class="font-bold text-blue-800 text-lg">Total Requerido</h3>
+                <p id="total-required" class="text-2xl font-semibold text-blue-900">0</p>
             </div>
+            <div class="bg-yellow-100 p-4 rounded-lg">
+                <h3 class="font-bold text-yellow-800 text-lg">Total en Stock</h3>
+                <p id="total-stock" class="text-2xl font-semibold text-yellow-900">0</p>
+            </div>
+            <div class="bg-red-100 p-4 rounded-lg">
+                <h3 class="font-bold text-red-800 text-lg">Total por Comprar</h3>
+                <p id="total-to-buy" class="text-2xl font-semibold text-red-900">0</p>
+            </div>
+        </div>
+        
+        <!-- Barra de Progreso General -->
+        <div class="mb-6">
+            <h3 class="font-semibold text-gray-700 mb-2 text-center">Progreso General de Compra</h3>
+            <div class="progress-bar-container">
+                <div id="overall-progress" class="progress-bar">0%</div>
+            </div>
+        </div>
+        
+        <!-- Botón de Exportar -->
+        <div class="my-8 text-center">
+            <button id="export-button" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                Finalizar y Exportar Pedido
+            </button>
+        </div>
 
-            <!-- Data Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div class="p-4 sm:p-6 border-b border-slate-200">
-                    <h2 class="text-xl font-semibold text-slate-800">Detalle de Materiales</h2>
-                    <p class="text-slate-500 mt-1">Lista completa de artículos, cantidades totales y marcas recomendadas.</p>
-                </div>
-                <div class="table-container">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-100 sticky top-0">
-                            <tr>
-                                <th class="p-4 font-semibold text-sm text-slate-600 uppercase tracking-wider">Artículo</th>
-                                <th class="p-4 font-semibold text-sm text-slate-600 uppercase tracking-wider text-right">Cantidad Total</th>
-                                <th class="p-4 font-semibold text-sm text-slate-600 uppercase tracking-wider">Marca / Recomendación</th>
-                            </tr>
-                        </thead>
-                        <tbody id="materials-table-body" class="divide-y divide-slate-200">
-                             <tr>
-                                <td colspan="3" class="p-8 text-center text-slate-500">
-                                    <div class="flex justify-center items-center">
-                                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Procesando datos del documento...
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+        <!-- Tabla de Materiales -->
+        <div class="overflow-x-auto max-h-[60vh]">
+            <table class="min-w-full divide-y divide-gray-200 border rounded-lg">
+                <thead class="table-header">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">#</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Material</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Requerido</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Stock</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Por Comprar</th>
+                    </tr>
+                </thead>
+                <tbody id="materials-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- Las filas se insertarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <script id="pdf-data" type="text/plain">
-"Caja de crayola triangulares (12 colores gruesos tamaño jumbo) marca Faber castell o Staedtler","1","59"
-"Frasco tempera de 250 ml de un color marca crayola, acrilex o faber castell","1","59"
-"Caja de plastilina suave y grande (10 colores) marca pelikan o faber castell","1","59"
-"Frasco de goma blanca (240 gramos) UHU o Staedtler","1","59"
-"Pincel plano cerda blanca N 24 lancer o milán","1","59"
-"Tijera escolar punta redonda para diestros y zurdos Staedtler o milán","1","59"
-"Ovillo de lana gruesa 20 gramos (cualquier color)","1","59"
-"Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr","1","59"
-"Paquete de 25 Cartulinas tamaño A3 varios colores","1","59"
-"Pliego de papel crepe (cualquie color)","1","59"
-"Paquete de 5 pliegos de Papel periodico","1","59"
-"Funda papel brillante tamaño A4 de 10 unidades","1","59"
-"Punzon","1","59"
-"Tabla para punzon","1","59"
-"Paquete pañitos humedos x 100 unidades marca pequeñin o johnson baby o huggies","1","59"
-"Papel higienico paquete por 4 marca familia, scott o elite","1","59"
-"Jabon liquido 260 ml protex o palmolive","1","59"
-"Alcohol antiséptico 500 ml marca weir o lira","1","59"
-"Rompecabezas de 25 piezas tamaño A4","1","59"
-"Paquete de 10 cartulinas A3 blanca","1","59"
-"Pliego de papel cometa cualquier color","1","59"
-"Marcador Tiza liquida cualquier color pelikan","1","59"
-"Paquete palos de helado","1","59"
-"Pliego papel de seda (cualquier color)","1","59"
-"Marcador permanente colores variados pelikan","1","59"
-"Funda de 12 limpia pipas","1","59"
-"Caja de 12 lapices de colores Faber castell o Staedtler","1","174"
-"Cuaderno de 100 hojas a cuatro lineas (grapado, cosido o anillado) marca norma","1","174"
-"Cuaderno de 80 hojas a cuadros o lineas (grapado, cosido o anillado) marca norma","3","522"
-"Cuaderno de 100 hojas a cuadros (grapado, cosido o anillado) marca norma","1","174"
-"Frasco de goma blanca (120 gramos) UHU o Staedtler","1","174"
-"Juego Geometrico Apolo o deli","1","174"
-"Tijera escolar punta redonda para diestros y zurdos Staedtler o milán","1","174"
-"Lapiz HB Staedtler","1","174"
-"Sacapunta doble uso metalico","1","174"
-"Borrador Blanco pelikan","1","174"
-"Pincel N 8 lancer o milán","1","174"
-"Pincel N 12 lancer o milán","1","174"
-"Caja de temperas de 6 colores crayola, acrilex o faber castell","1","174"
-"Paquete de 4 pliegos de Papel periodico","1","174"
-"Paquete de 40 hojas de papel bond Tamaño A4 de 75 gr","1","174"
-"Paquete de 10 cartulinas tamañp A4 varios colores","1","174"
-"Caja de 12 marcadores escolares varios colores marca pelikan","1","174"
-"Marcador tiza liquida color azul marca pelikan","1","174"
-"Marcador tiza liquida color negro marca pelikan","1","174"
-"Marcador tiza liquida color rojo marca pelikan","1","174"
-"Funda papel brillante tamaño A4","1","174"
-"Carpeta tipo sobre, tamaño A4","1","174"
-"Carpeta plástica con vincha","2","348"
-"Paquete de 10 cartulinas iris A4","1","174"
-"Paquete de 10 cartulina de colores A4 bristol","1","174"
-"Cinta masking 36 x 40 marca fantape","1","174"
-"Lapiz Bicolor Staedtler","1","174"
-"Esferográfico color azul bic punta fina","1","174"
-"Esferográfico color rojo bic punta fina","1","174"
-"Paquete de 5 pliegos de Papel crepe varios colores","3","522"
-"Paquete de 50 hojas perforadas A4 cuadros","1","174"
-"Marcadores acrilicos de varios colores marca pelikan","3","522"
-"Ovillo de lana 20 gramos cualquier color","1","174"
-"Borrador Blanco pelikan","1","147"
-"Caja de 6 marcadores escolares varios colores marca pelikan","1","147"
-"Cuaderno de 100 hojas a dos lineas (grapado, cosido o anillado) marca norma","2","294"
-"Cuaderno de 100 hojas a lineas (grapado, cosido o anillado) marca norma","2","294"
-"Cuaderno de 100 hojas a cuadros (grapado, cosido o anillado) marca norma","1","147"
-"Esferográfico color negro bic punta fina","1","147"
-"Esferográfico color azul bic punta fina","1","147"
-"Esferográfico color rojo bic punta fina","1","147"
-"Frasco de goma blanca (120 gramos) UHU o Staedtler","1","147"
-"Juego Geometrico con regla de 30 cm Apolo o deli","1","147"
-"Lapiz HB Staedtler","3","441"
-"Sacapuntas metálico doble uso","1","147"
-"Tijera escolar punta redonda para diestros y zurdos Staedtler o milán","1","147"
-"Caja de temperas de 6 colores crayola, acrilex o faber castell","1","147"
-"Caja de lapices de 12 colores Faber castello Staedtler","1","147"
-"Pincel N 8 lancer o milán","1","147"
-"Pincel N 12 lancer o milán","1","147"
-"Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr","1","147"
-"Paquete de 50 hojas perforadas a cuadros A4","1","147"
-"Paquete de 6 pliegos de papel periodico","1","147"
-"Cuaderno de 50 hojas a lineas (grapado, cosido o anillado) marca norma","1","147"
-"Marcador Permanente azul pelikan","1","147"
-"Marcador Permanente negro pelikan","1","147"
-"Compas escolar pelikan","1","147"
-"Carpeta plastica con vincha cualquier color","2","294"
-"Cinta masking o cinta de papel 4 cm marca fantape","1","147"
-"Paquete de 10 cartulinas de colores A4 bristol","1","147"
-"Paquete de 10 cartulinas blancas","1","147"
-"Paquete de 10 cartulinas iris A4","1","147"
-"Calculadora sencilla (septimo grado) 08 digitos bolsillo hi-4a negro casio","1","55"
-"Borrador Blanco marca pelikan","1","182"
-"Caja de 6 marcadores escolares de varios colores marca pelikan","1","182"
-"Cuadernos de 80 hojas a lineas universitario marca norma","4","728"
-"Cuaderno de 100 hojas a cuadros universitario marca norma","1","182"
-"Esferográfico color negro bic punta fina","1","182"
-"Esferográfico color azul bic punta fina","1","182"
-"Esferográfico color rojo bic punta fina","1","182"
-"Frasco de goma blanca (120 gramos) UHU o Staedtler","1","182"
-"Juego geometrico con regla de 30 cm Apolo o deli","1","182"
-"Lapiz HB Staedtler","1","182"
-"Sacapuntas metálico doble uso","1","182"
-"Tijera escolar punta redonda para diestros y zurdos Staedtler o milán","1","182"
-"Caja de temperas de 6 colores crayola, acrilex o faber castell","1","182"
-"Caja de lapices de 12 colores Faber castell o Staedtler","1","182"
-"Pincel N 8 lancer o milán","1","182"
-"Pincel N 12 lancer o milán","1","182"
-"Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr","1","182"
-"Paquete de 50 hojas perforadas a cuadros A4","1","182"
-"Paquete de 6 pliegos de papel periodico","1","182"
-"Cuaderno de 50 hojas a lineas marca norma","1","182"
-"Marcador Permanente azul pelikan","1","182"
-"Marcador Permanente negro pelikan","1","182"
-"Compas escolar pelikan","1","182"
-"Carpeta de carton con vincha cualquier color","2","364"
-"Corrector liquido marca bic","1","182"
-"Paquete de 10 cartulinas de colores A4 bristol","1","182"
-"Paquete de 10 cartulinas iris A4","1","182"
-"Calculadora cientifica fx8ms plus negra 240 funciones o similar deli o casio","1","182"
-"Corrector liquido marca bic","1","162"
-"Borrador Blanco marca pelikan","1","162"
-"Sacapuntas metálico doble uso","1","162"
-"Caja de 6 marcadores escolares de varios colores marca pelikan","1","162"
-"Cuaderno universitario de 100 hojas a linea marca norma","5","810"
-"Cuaderno universitario de 100 hojas a cuadros marca norma","5","810"
-"Esferográfico color negro bic punta fina","1","162"
-"Esferográfico color azul bic punta fina","1","162"
-"Esferográfico color rojo bic punta fina","1","162"
-"Juego geometrico 30 cm Apolo o deli","1","162"
-"Caja de temperas de 6 colores crayola, acrilex o faber castell","1","162"
-"Lapiz HB Staedtler","1","162"
-"Resaltador marca bic o staedhler","1","162"
-"Caja de lapices de 12 colores Faber castell o Staedtler","1","162"
-"Frasco de goma blanca (120 gramos) UHU o Staedtler","1","162"
-"Cuaderno de 50 hojas a lineas marca norma","1","162"
-"Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr","1","162"
-"Marcador Permanente azul pelikan","1","162"
-"Marcador Permanente negro pelikan","1","162"
-"Tijera escolar punta redonda para diestros y zurdos Staedtler o milán","1","162"
-"Compas escolar pelikan","1","162"
-"Carpeta de carton con vincha cualquier color","2","324"
-"Calculadora cientifica fx8ms plus negra 240 funciones o similar deli o ca","1","162"
-"Paquete de 50 hojas perforadas a cuadros A4","1","162"
-"Paquete de 10 cartulinas de colores A4 bristol","1","162"
-"Paquete de 10 cartulinas iris A4","1","162"
-"Paquete de 6 pliegos de papel periodico","1","162"
-"Pincel N 8 lancer o milán","1","162"
-"Pincel N 12 lancer o milán","1","162"
-"Cinta adhesiva scotch","1","162"
-"Borrador Blanco pelikan","1","187"
-"Caja de 6 marcadores escolares de varios colores marca pelikan","1","187"
-"Cuadernos de 100 hojas a linea universitario marca norma","2","375"
-"Cuaderno de 100 hojas a cuadros universitario marca norma","2","375"
-"Cuaderno de 100 hojas a lineas (grapado, cosido o anillado) marca norm","2","375"
-"Cuaderno de 100 hojas a cuadros (grapado, cosido o anillado) marca no","2","375"
-"Esferográfico color negro bic punta fina","1","187"
-"Esferográfico color azul bic punta fina","1","187"
-"Esferográfico color rojo bic punta fina","1","187"
-"Frasco de goma blanca (120 gramos) UHU o Staedtler","1","187"
-"Juego geometrico con regla de 30 cm Apolo o deli","1","187"
-"Lapiz HB Staedtler","1","187"
-"Sacapuntas metálico doble uso","1","187"
-"Tijera escolar punta redonda para diestros y zurdos Staedtler o milán","1","187"
-"Caja de temperas de 6 colores crayola, acrilex o faber castell","1","187"
-"Caja de lapices de 12 colores Faber castell o Staedtler","1","187"
-"Pincel N 8 lancer o milán","1","187"
-"Pincel N 12 lancer o milan","1","187"
-"Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr","1","187"
-"Paquete de 50 hojas perforadas a cuadros A4","1","187"
-"Paquete de 6 pliegos de papel periodico","1","187"
-"Paquete de 10 cartulinas de colores A4 bristol","1","187"
-"Paquete de 10 cartulinas iris A4","1","187"
-    </script>
+    <!-- Modal de Confirmación -->
+    <div id="export-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Confirmar Pedido</h2>
+            <p class="text-gray-600 mb-6">Se generará un archivo <code class="bg-gray-200 text-sm p-1 rounded">pedido.csv</code> con los artículos por comprar. Podrás abrir este archivo con Excel o Google Sheets.</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-export" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">Cancelar</button>
+                <button id="confirm-export" class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">Confirmar y Descargar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            
-            /**
-             * Cleans a material name by removing extra details for better grouping.
-             * @param {string} name - The original material name.
-             * @returns {string} The cleaned and normalized material name.
-             */
-            function cleanMaterialName(name) {
-                if (!name) return '';
-                let cleaned = name.toLowerCase();
-                
-                // Remove content in parentheses and specific phrases
-                cleaned = cleaned.replace(/\(.*?\)/g, '').trim();
-                cleaned = cleaned.split(' marca ')[0].trim();
-                cleaned = cleaned.replace(/para diestros y zurdos/g, '').trim();
-                cleaned = cleaned.replace(/universitario/g, '').trim();
-                cleaned = cleaned.replace(/escolar/g, '').trim();
-                cleaned = cleaned.replace(/varios colores/g, '').trim();
-                cleaned = cleaned.replace(/cualquier color/g, '').trim();
-                cleaned = cleaned.replace(/tamaño a4/g, 'a4').trim();
-                cleaned = cleaned.replace(/tamaño a3/g, 'a3').trim();
-                cleaned = cleaned.replace(/punta redonda/g, '').trim();
-                cleaned = cleaned.replace(/punta fina/g, '').trim();
+        // Datos de materiales
+        const materialsData = [
+            { category: "Papelería y Cuadernos", name: "Cuaderno cosido o de doble anillo parvulario de cuadros", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a cuatro lineas", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 80 hojas a cuadros o lineas", required: 522 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a cuadros", required: 1515 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a dos lineas", required: 294 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a lineas", required: 1471 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 50 hojas a lineas", required: 329 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr", required: 609 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 25 Cartulinas tamaño A3 varios colores", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Pliego de papel crepe", required: 233 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 5 pliegos de Papel periodico", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 4 pliegos de Papel periodico", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 6 pliegos de papel periodico", required: 516 },
+            { category: "Papelería y Cuadernos", name: "Funda papel brillante tamaño A4 de 10 unidades", required: 233 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas A3 blanca", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Pliego papel de cometa", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Pliego papel de seda", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 25 hojas parvularias de cuadros", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 25 hojas parvularias de lineas", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas iris A4", required: 851 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas de colores A4 bristol", required: 851 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas blancas", required: 147 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 40 hojas de papel bond Tamaño A4 de 75 gr", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas tamaño A4 varios colores", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 50 hojas perforadas A4 cuadros", required: 670 },
+            { category: "Escritura y Dibujo", name: "Caja de crayola triangulares (12 colores gruesos tamaño jumbo)", required: 118 },
+            { category: "Escritura y Dibujo", name: "Frasco tempera de 250 ml de un color", required: 59 },
+            { category: "Escritura y Dibujo", name: "Caja de plastilina suave y grande (10 colores)", required: 118 },
+            { category: "Escritura y Dibujo", name: "Caja de crayones jumbo (12 colores)", required: 59 },
+            { category: "Escritura y Dibujo", name: "Lapiz Triangular Jumbo", required: 59 },
+            { category: "Escritura y Dibujo", name: "Caja de temperas de 6 colores", required: 852 },
+            { category: "Escritura y Dibujo", name: "Marcador Tiza liquida (cualquier color/azul/negro/rojo)", required: 236 },
+            { category: "Escritura y Dibujo", name: "Marcador permanente (colores variados/azul/negro)", required: 916 },
+            { category: "Escritura y Dibujo", name: "Borrador Blanco", required: 729 },
+            { category: "Escritura y Dibujo", name: "Caja de 12 lapices de colores", required: 670 },
+            { category: "Escritura y Dibujo", name: "Lapiz HB", required: 934 },
+            { category: "Escritura y Dibujo", name: "Lapiz Bicolor", required: 174 },
+            { category: "Escritura y Dibujo", name: "Esferográfico color azul", required: 523 },
+            { category: "Escritura y Dibujo", name: "Esferográfico color rojo", required: 523 },
+            { category: "Escritura y Dibujo", name: "Esferográfico color negro", required: 523 },
+            { category: "Escritura y Dibujo", name: "Marcadores acrilicos de varios colores", required: 522 },
+            { category: "Escritura y Dibujo", name: "Caja de 6 marcadores escolares punta media (varios colores)", required: 737 },
+            { category: "Escritura y Dibujo", name: "Resaltador", required: 162 },
+            { category: "Manualidades y Varios", name: "Frasco de goma blanca (240 gramos)", required: 59 },
+            { category: "Manualidades y Varios", name: "Frasco de goma blanca (120 gramos)", required: 759 },
+            { category: "Manualidades y Varios", name: "Pincel plano cerda blanca N 24", required: 59 },
+            { category: "Manualidades y Varios", name: "Pincel N 8", required: 754 },
+            { category: "Manualidades y Varios", name: "Pincel N 12", required: 754 },
+            { category: "Manualidades y Varios", name: "Tijera escolar punta redonda", required: 818 },
+            { category: "Manualidades y Varios", name: "Ovillo de lana gruesa 20 gramos", required: 233 },
+            { category: "Manualidades y Varios", name: "Punzon", required: 59 },
+            { category: "Manualidades y Varios", name: "Tabla para punzon", required: 59 },
+            { category: "Manualidades y Varios", name: "Paquete palos de helado", required: 59 },
+            { category: "Manualidades y Varios", name: "Funda de 12 limpia pipas", required: 59 },
+            { category: "Manualidades y Varios", name: "Sacapunta doble uso metalico", required: 724 },
+            { category: "Manualidades y Varios", name: "Juego Geometrico", required: 852 },
+            { category: "Manualidades y Varios", name: "Compas escolar", required: 491 },
+            { category: "Manualidades y Varios", name: "Cinta masking", required: 380 },
+            { category: "Manualidades y Varios", name: "Corrector liquido", required: 344 },
+            { category: "Manualidades y Varios", name: "Cinta adhesiva scotch", required: 162 },
+            { category: "Organización", name: "Carpeta tipo acordeón", required: 59 },
+            { category: "Organización", name: "Carpeta tipo sobre, tamaño A4", required: 174 },
+            { category: "Organización", name: "Carpeta plástica con vincha", required: 642 },
+            { category: "Organización", name: "Carpeta de carton con vincha", required: 688 },
+            { category: "Aseo Personal", name: "Paquete pañitos humedos x 100 unidades", required: 118 },
+            { category: "Aseo Personal", name: "Papel higienico paquete por 4", required: 118 },
+            { category: "Aseo Personal", name: "Jabon liquido 260 ml", required: 118 },
+            { category: "Aseo Personal", name: "Alcohol antiséptico 500 ml", required: 118 },
+            { category: "Didácticos", name: "Rompecabezas de 25 piezas tamaño A4", required: 118 },
+        ].map((item, index) => ({...item, id: index, stock: 0, itemNumber: index + 1 }));
 
-                // Normalize similar items
-                if (cleaned.includes('cuaderno')) cleaned = cleaned.replace(/(grapado, cosido o anillado)/g, '');
-                if (cleaned.includes('goma blanca')) return 'Goma blanca';
-                if (cleaned.includes('lapices de 12 colores')) return 'Caja de lápices de 12 colores';
-                if (cleaned.includes('crayola')) return 'Caja de crayolas';
-                if (cleaned.includes('temperas de 6 colores')) return 'Caja de témperas de 6 colores';
-                if (cleaned.includes('tempera de 250 ml')) return 'Frasco de témpera 250 ml';
-                if (cleaned.includes('esferográfico color')) return cleaned.replace('esferográfico color', 'esfero');
-                if (cleaned.includes('juego geometrico')) return 'Juego geométrico';
-                if (cleaned.includes('sacapuntas') && cleaned.includes('doble')) return 'Sacapuntas metálico doble';
-                if (cleaned.includes('papel bond')) return 'Hojas de papel bond A4';
-                if (cleaned.includes('papel periodico')) return 'Pliegos de papel periódico';
-                if (cleaned.includes('papel crepe')) return 'Pliegos de papel crepé';
-                if (cleaned.includes('hojas perforadas a cuadros a4')) return 'Hojas perforadas a cuadros A4';
-                if (cleaned.includes('cartulinas de colores a4 bristol')) return 'Cartulinas Bristol A4 (colores)';
-                if (cleaned.includes('cartulinas iris a4')) return 'Cartulinas Iris A4';
-                if (cleaned.includes('carpeta') && cleaned.includes('vincha')) return 'Carpeta con vincha';
-                if (cleaned.includes('marcador permanente')) return cleaned.replace('.', '');
-                if (cleaned.includes('borrador blanco')) return 'Borrador blanco';
-                if (cleaned.includes('tijera')) return 'Tijera';
-                if (cleaned.includes('lápiz hb')) return 'Lápiz HB';
-                if (cleaned.includes('pincel n 8')) return 'Pincel N 8';
-                if (cleaned.includes('pincel n 12')) return 'Pincel N 12';
-                if (cleaned.includes('compas')) return 'Compás';
-                if (cleaned.includes('corrector liquido')) return 'Corrector líquido';
-                if (cleaned.includes('calculadora cientifica')) return 'Calculadora científica';
-                
-                // General cleanup
-                cleaned = cleaned.replace(/\s+/g, ' ').trim();
-                cleaned = cleaned.replace(/[.-]/g, '').trim();
-                
-                if (!cleaned) return '';
-                // Capitalize first letter for display
-                return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-            }
+        const tableBody = document.getElementById('materials-table-body');
+        const modal = document.getElementById('export-modal');
 
-            /**
-             * Extracts brand information from a material string.
-             * @param {string} originalName - The original material description.
-             * @returns {string} The extracted and formatted brand names or an empty string.
-             */
-            function extractBrand(originalName) {
-                const lowerCaseName = originalName.toLowerCase();
-                const match = lowerCaseName.match(/marca\s+(.+)/);
-                if (match && match[1]) {
-                    return match[1]
-                        .split(/ o | y |\/|,/g) // split by ' o ', ' y ', '/', ','
-                        .map(brand => brand.trim())
-                        .filter(Boolean)
-                        .map(brand => brand.charAt(0).toUpperCase() + brand.slice(1))
-                        .join(' / ');
+        // Función para renderizar la tabla
+        function renderTable() {
+            tableBody.innerHTML = '';
+            let currentCategory = '';
+            materialsData.forEach(item => {
+                if (item.category !== currentCategory) {
+                    currentCategory = item.category;
+                    const categoryRow = document.createElement('tr');
+                    categoryRow.className = 'category-header';
+                    categoryRow.innerHTML = `<td colspan="5" class="px-6 py-3 text-sm text-gray-700">${currentCategory}</td>`;
+                    tableBody.appendChild(categoryRow);
                 }
-                const alternatives = lowerCaseName.split(/ o | y |\/|,/g);
-                if (alternatives.length > 1 && lowerCaseName.includes('staedtler')) return 'Faber Castell / Staedtler';
+                const toBuy = Math.max(0, item.required - item.stock);
+                const row = document.createElement('tr');
+                row.id = `row-${item.id}`;
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${item.itemNumber}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${item.required}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <input type="number" min="0" value="${item.stock}" data-id="${item.id}" class="stock-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-center to-buy">${toBuy}</td>
+                `;
+                tableBody.appendChild(row);
+                updateRowStatus(item.id);
+            });
+            updateSummary();
+        }
 
-                return '';
+        // Función para actualizar el estado visual de una fila
+        function updateRowStatus(id) {
+            const item = materialsData.find(m => m.id === id);
+            const row = document.getElementById(`row-${id}`);
+            if (!item || !row) return;
+            row.classList.remove('status-complete', 'status-partial', 'status-needed');
+            if (item.stock >= item.required) {
+                row.classList.add('status-complete');
+            } else if (item.stock > 0) {
+                row.classList.add('status-partial');
+            } else {
+                row.classList.add('status-needed');
+            }
+        }
+
+        // Función para actualizar el resumen general
+        function updateSummary() {
+            const totalRequired = materialsData.reduce((sum, item) => sum + item.required, 0);
+            const totalStock = materialsData.reduce((sum, item) => sum + item.stock, 0);
+            const totalToBuy = Math.max(0, totalRequired - totalStock);
+            document.getElementById('total-required').textContent = totalRequired.toLocaleString();
+            document.getElementById('total-stock').textContent = totalStock.toLocaleString();
+            document.getElementById('total-to-buy').textContent = totalToBuy.toLocaleString();
+            const progress = totalRequired > 0 ? Math.round((totalStock / totalRequired) * 100) : 100;
+            const progressBar = document.getElementById('overall-progress');
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+            if (progress < 40) progressBar.style.backgroundColor = '#f87171';
+            else if (progress < 80) progressBar.style.backgroundColor = '#facc15';
+            else progressBar.style.backgroundColor = '#4ade80';
+        }
+
+        // Función para exportar a CSV
+        function exportToCSV() {
+            const itemsToBuy = materialsData.filter(item => (item.required - item.stock) > 0);
+            if (itemsToBuy.length === 0) {
+                alert("¡Felicidades! No necesitas comprar ningún artículo.");
+                return;
             }
 
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Material,Cantidad a Comprar\n"; // Encabezados del CSV
 
-            /**
-             * Parses the raw text to extract and aggregate material data.
-             * @param {string} text - The raw text content.
-             * @returns {object} An object mapping cleaned material names to their details.
-             */
-            function processData(text) {
-                const itemMap = {};
-                const lines = text.trim().split(/\r?\n/);
+            itemsToBuy.forEach(item => {
+                const toBuy = item.required - item.stock;
+                const row = `"${item.name}",${toBuy}`;
+                csvContent += row + "\n";
+            });
 
-                for (const line of lines) {
-                    if (line.trim() === '') continue;
-                    const parts = line.replace(/^"|",?$/g, '').split('","');
-                    if (parts.length < 3) continue;
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "pedido_utiles.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            modal.classList.add('hidden');
+        }
 
-                    const materialPart = parts[0];
-                    const quantityPart = parts[2];
-
-                    if (!materialPart || !quantityPart) continue;
-
-                    const quantity = parseInt(quantityPart, 10);
-                    const cleanedMaterial = cleanMaterialName(materialPart);
-                    const brand = extractBrand(materialPart);
-
-                    if (cleanedMaterial && !isNaN(quantity)) {
-                        if (!itemMap[cleanedMaterial]) {
-                            itemMap[cleanedMaterial] = {
-                                quantity: 0,
-                                brands: new Set()
-                            };
-                        }
-                        itemMap[cleanedMaterial].quantity += quantity;
-                        if (brand) {
-                            brand.split(' / ').forEach(b => itemMap[cleanedMaterial].brands.add(b.trim()));
-                        }
-                    }
+        // Event listeners
+        tableBody.addEventListener('input', (e) => {
+            if (e.target.classList.contains('stock-input')) {
+                const id = parseInt(e.target.dataset.id, 10);
+                const value = parseInt(e.target.value, 10) || 0;
+                const item = materialsData.find(m => m.id === id);
+                if (item) {
+                    item.stock = value < 0 ? 0 : value;
+                    e.target.value = item.stock;
+                    const toBuy = Math.max(0, item.required - item.stock);
+                    document.getElementById(`row-${id}`).querySelector('.to-buy').textContent = toBuy;
+                    updateRowStatus(id);
+                    updateSummary();
                 }
-                return itemMap;
             }
-
-            /**
-             * Renders the processed data into the HTML table and summary cards.
-             * @param {object} data - The processed data from `processData`.
-             */
-            function renderDashboard(data) {
-                const tableBody = document.getElementById('materials-table-body');
-                if (!tableBody) return;
-                
-                tableBody.innerHTML = ''; // Clear loading indicator
-
-                if (Object.keys(data).length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-8 text-slate-500">No se pudieron extraer datos del documento.</td></tr>';
-                    return;
-                }
-                
-                const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
-                
-                let totalQuantity = 0;
-                
-                sortedData.forEach(([material, details]) => {
-                    const { quantity, brands } = details;
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-slate-50 transition-colors duration-150';
-                    
-                    const brandText = brands.size > 0 ? Array.from(brands).join(' / ') : 'N/A';
-
-                    row.innerHTML = `
-                        <td class="p-4 text-slate-800 font-medium">${material}</td>
-                        <td class="p-4 text-slate-600 font-mono text-right">${quantity.toLocaleString('es')}</td>
-                        <td class="p-4 text-slate-600">${brandText}</td>
-                    `;
-                    tableBody.appendChild(row);
-                    totalQuantity += quantity;
-                });
-
-                // Update summary cards
-                document.getElementById('unique-items-count').textContent = sortedData.length.toLocaleString('es');
-                document.getElementById('total-quantity-count').textContent = totalQuantity.toLocaleString('es');
-            }
-
-            // Main execution
-            const rawText = document.getElementById('pdf-data').textContent;
-            const processedData = processData(rawText);
-            renderDashboard(processedData);
         });
+
+        document.getElementById('export-button').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('cancel-export').addEventListener('click', () => modal.classList.add('hidden'));
+        document.getElementById('confirm-export').addEventListener('click', exportToCSV);
+
+        // Renderizado inicial
+        document.addEventListener('DOMContentLoaded', renderTable);
     </script>
+
 </body>
 </html>
