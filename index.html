@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Inventario - Geopark</title>
+    <title>Control de Pedidos - Geopark</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -76,8 +76,8 @@
 
     <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
         <header class="mb-6 text-center">
-            <h1 class="text-3xl font-bold text-gray-800">Dashboard de Inventario Geopark</h1>
-            <p class="text-gray-600 mt-2">Ingresa la cantidad que tienes en "Stock" para ver cuántos artículos necesitas comprar.</p>
+            <h1 class="text-3xl font-bold text-gray-800">Control de Pedidos Geopark</h1>
+            <p class="text-gray-600 mt-2">Ingresa la cantidad que tienes en stock para generar la lista de compra.</p>
         </header>
 
         <!-- Resumen General -->
@@ -98,7 +98,7 @@
         
         <!-- Barra de Progreso General -->
         <div class="mb-6">
-            <h3 class="font-semibold text-gray-700 mb-2 text-center">Progreso General de Compra</h3>
+            <h3 class="font-semibold text-gray-700 mb-2 text-center">Progreso General del Pedido</h3>
             <div class="progress-bar-container">
                 <div id="overall-progress" class="progress-bar">0%</div>
             </div>
@@ -118,6 +118,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">#</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Material</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Marca</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Requerido</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Stock</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Por Comprar</th>
@@ -143,77 +144,78 @@
     </div>
 
     <script>
-        // Datos de materiales
+        // Datos de materiales con marca y totales corregidos
         const materialsData = [
-            { category: "Papelería y Cuadernos", name: "Cuaderno cosido o de doble anillo parvulario de cuadros", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a cuatro lineas", required: 174 },
-            { category: "Papelería y Cuadernos", name: "Cuaderno de 80 hojas a cuadros o lineas", required: 522 },
-            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a cuadros", required: 1515 },
-            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a dos lineas", required: 294 },
-            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a lineas", required: 1471 },
-            { category: "Papelería y Cuadernos", name: "Cuaderno de 50 hojas a lineas", required: 329 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr", required: 609 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 25 Cartulinas tamaño A3 varios colores", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Pliego de papel crepe", required: 233 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 5 pliegos de Papel periodico", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 4 pliegos de Papel periodico", required: 174 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 6 pliegos de papel periodico", required: 516 },
-            { category: "Papelería y Cuadernos", name: "Funda papel brillante tamaño A4 de 10 unidades", required: 233 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas A3 blanca", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Pliego papel de cometa", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Pliego papel de seda", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 25 hojas parvularias de cuadros", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 25 hojas parvularias de lineas", required: 59 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas iris A4", required: 851 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas de colores A4 bristol", required: 851 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas blancas", required: 147 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 40 hojas de papel bond Tamaño A4 de 75 gr", required: 174 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas tamaño A4 varios colores", required: 174 },
-            { category: "Papelería y Cuadernos", name: "Paquete de 50 hojas perforadas A4 cuadros", required: 670 },
-            { category: "Escritura y Dibujo", name: "Caja de crayola triangulares (12 colores gruesos tamaño jumbo)", required: 118 },
-            { category: "Escritura y Dibujo", name: "Frasco tempera de 250 ml de un color", required: 59 },
-            { category: "Escritura y Dibujo", name: "Caja de plastilina suave y grande (10 colores)", required: 118 },
-            { category: "Escritura y Dibujo", name: "Caja de crayones jumbo (12 colores)", required: 59 },
-            { category: "Escritura y Dibujo", name: "Lapiz Triangular Jumbo", required: 59 },
-            { category: "Escritura y Dibujo", name: "Caja de temperas de 6 colores", required: 852 },
-            { category: "Escritura y Dibujo", name: "Marcador Tiza liquida (cualquier color/azul/negro/rojo)", required: 236 },
-            { category: "Escritura y Dibujo", name: "Marcador permanente (colores variados/azul/negro)", required: 916 },
-            { category: "Escritura y Dibujo", name: "Borrador Blanco", required: 729 },
-            { category: "Escritura y Dibujo", name: "Caja de 12 lapices de colores", required: 670 },
-            { category: "Escritura y Dibujo", name: "Lapiz HB", required: 934 },
-            { category: "Escritura y Dibujo", name: "Lapiz Bicolor", required: 174 },
-            { category: "Escritura y Dibujo", name: "Esferográfico color azul", required: 523 },
-            { category: "Escritura y Dibujo", name: "Esferográfico color rojo", required: 523 },
-            { category: "Escritura y Dibujo", name: "Esferográfico color negro", required: 523 },
-            { category: "Escritura y Dibujo", name: "Marcadores acrilicos de varios colores", required: 522 },
-            { category: "Escritura y Dibujo", name: "Caja de 6 marcadores escolares punta media (varios colores)", required: 737 },
-            { category: "Escritura y Dibujo", name: "Resaltador", required: 162 },
-            { category: "Manualidades y Varios", name: "Frasco de goma blanca (240 gramos)", required: 59 },
-            { category: "Manualidades y Varios", name: "Frasco de goma blanca (120 gramos)", required: 759 },
-            { category: "Manualidades y Varios", name: "Pincel plano cerda blanca N 24", required: 59 },
-            { category: "Manualidades y Varios", name: "Pincel N 8", required: 754 },
-            { category: "Manualidades y Varios", name: "Pincel N 12", required: 754 },
-            { category: "Manualidades y Varios", name: "Tijera escolar punta redonda", required: 818 },
-            { category: "Manualidades y Varios", name: "Ovillo de lana gruesa 20 gramos", required: 233 },
-            { category: "Manualidades y Varios", name: "Punzon", required: 59 },
-            { category: "Manualidades y Varios", name: "Tabla para punzon", required: 59 },
-            { category: "Manualidades y Varios", name: "Paquete palos de helado", required: 59 },
-            { category: "Manualidades y Varios", name: "Funda de 12 limpia pipas", required: 59 },
-            { category: "Manualidades y Varios", name: "Sacapunta doble uso metalico", required: 724 },
-            { category: "Manualidades y Varios", name: "Juego Geometrico", required: 852 },
-            { category: "Manualidades y Varios", name: "Compas escolar", required: 491 },
-            { category: "Manualidades y Varios", name: "Cinta masking", required: 380 },
-            { category: "Manualidades y Varios", name: "Corrector liquido", required: 344 },
-            { category: "Manualidades y Varios", name: "Cinta adhesiva scotch", required: 162 },
-            { category: "Organización", name: "Carpeta tipo acordeón", required: 59 },
-            { category: "Organización", name: "Carpeta tipo sobre, tamaño A4", required: 174 },
-            { category: "Organización", name: "Carpeta plástica con vincha", required: 642 },
-            { category: "Organización", name: "Carpeta de carton con vincha", required: 688 },
-            { category: "Aseo Personal", name: "Paquete pañitos humedos x 100 unidades", required: 118 },
-            { category: "Aseo Personal", name: "Papel higienico paquete por 4", required: 118 },
-            { category: "Aseo Personal", name: "Jabon liquido 260 ml", required: 118 },
-            { category: "Aseo Personal", name: "Alcohol antiséptico 500 ml", required: 118 },
-            { category: "Didácticos", name: "Rompecabezas de 25 piezas tamaño A4", required: 118 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno cosido o de doble anillo parvulario de cuadros", brand: "Norma", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a cuatro lineas", brand: "Norma", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 80 hojas a cuadros o lineas", brand: "Norma", required: 522 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a cuadros", brand: "Norma", required: 1883 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a dos lineas", brand: "Norma", required: 294 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 100 hojas a lineas", brand: "Norma", required: 1560 },
+            { category: "Papelería y Cuadernos", name: "Cuaderno de 50 hojas a lineas", brand: "Norma", required: 493 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 50 hojas de papel bond Tamaño A4 de 75 gr", brand: "Norma", required: 744 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 25 Cartulinas tamaño A3 varios colores", brand: "Passola", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Pliego de papel crepe", brand: "Passola", required: 292 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 5 pliegos de Papel periodico", brand: "Passola", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 4 pliegos de Papel periodico", brand: "Passola", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 6 pliegos de papel periodico", brand: "Passola", required: 665 },
+            { category: "Papelería y Cuadernos", name: "Funda papel brillante tamaño A4 de 10 unidades", brand: "Passola", required: 466 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas A3 blanca", brand: "Passola", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Pliego papel de cometa", brand: "Passola", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Pliego papel de seda", brand: "Passola", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 25 hojas parvularias de cuadros", brand: "Norma", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 25 hojas parvularias de lineas", brand: "Norma", required: 59 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas iris A4", brand: "Passola", required: 752 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas de colores A4 bristol", brand: "Passola", required: 881 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas blancas", brand: "Passola", required: 147 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 40 hojas de papel bond Tamaño A4 de 75 gr", brand: "Norma", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 10 cartulinas tamaño A4 varios colores", brand: "Norma", required: 174 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 50 hojas perforadas A4 cuadros", brand: "Norma", required: 840 },
+            { category: "Papelería y Cuadernos", name: "Paquete de 6 Cartulinas tamaño A3 color blanco", brand: "Passola", required: 59 },
+            { category: "Escritura y Dibujo", name: "Caja de crayola triangulares (12 colores gruesos tamaño jumbo)", brand: "Faber Castell", required: 118 },
+            { category: "Escritura y Dibujo", name: "Frasco tempera de 250 ml de un color", brand: "Faber Castell", required: 59 },
+            { category: "Escritura y Dibujo", name: "Caja de plastilina suave y grande (10 colores)", brand: "Pelikan", required: 118 },
+            { category: "Escritura y Dibujo", name: "Caja de crayones jumbo (12 colores)", brand: "Faber Castell", required: 59 },
+            { category: "Escritura y Dibujo", name: "Lapiz Triangular Jumbo", brand: "Staedtler", required: 59 },
+            { category: "Escritura y Dibujo", name: "Caja de temperas de 6 colores", brand: "Faber Castell", required: 941 },
+            { category: "Escritura y Dibujo", name: "Marcador Tiza liquida", brand: "Pelikan", required: 233 },
+            { category: "Escritura y Dibujo", name: "Marcador permanente", brand: "Pelikan", required: 737 },
+            { category: "Escritura y Dibujo", "name": "Borrador Blanco", "brand": "Pelikan", "required": 911 },
+            { category: "Escritura y Dibujo", name: "Caja de 12 lapices de colores", brand: "Faber Castell", required: 852 },
+            { category: "Escritura y Dibujo", name: "Lapiz HB", brand: "Staedtler", required: 964 },
+            { category: "Escritura y Dibujo", name: "Lapiz Bicolor", brand: "Staedtler", required: 174 },
+            { category: "Escritura y Dibujo", name: "Esferográfico color azul", brand: "BIC", required: 523 },
+            { category: "Escritura y Dibujo", name: "Esferográfico color rojo", brand: "BIC", required: 523 },
+            { category: "Escritura y Dibujo", name: "Esferográfico color negro", brand: "BIC", required: 511 },
+            { category: "Escritura y Dibujo", name: "Marcadores acrilicos de varios colores", brand: "Pelikan", required: 522 },
+            { category: "Escritura y Dibujo", name: "Caja de 6 marcadores escolares punta media", brand: "Pelikan", required: 879 },
+            { category: "Escritura y Dibujo", name: "Resaltador", brand: "BIC", required: 162 },
+            { category: "Manualidades y Varios", name: "Frasco de goma blanca (240 gramos)", brand: "Staedtler", required: 59 },
+            { category: "Manualidades y Varios", name: "Frasco de goma blanca (120 gramos)", brand: "Staedtler", required: 852 },
+            { category: "Manualidades y Varios", name: "Pincel plano cerda blanca N 24", brand: "Lancer", required: 59 },
+            { category: "Manualidades y Varios", name: "Pincel N 8", brand: "Lancer", required: 754 },
+            { category: "Manualidades y Varios", name: "Pincel N 12", brand: "Lancer", required: 754 },
+            { category: "Manualidades y Varios", name: "Tijera escolar punta redonda", brand: "Staedtler", required: 852 },
+            { category: "Manualidades y Varios", name: "Ovillo de lana gruesa 20 gramos", brand: "Passola", required: 233 },
+            { category: "Manualidades y Varios", name: "Punzon", brand: "Passola", required: 59 },
+            { category: "Manualidades y Varios", name: "Tabla para punzon", brand: "Passola", required: 59 },
+            { category: "Manualidades y Varios", name: "Paquete palos de helado", brand: "Lancer", required: 59 },
+            { category: "Manualidades y Varios", name: "Funda de 12 limpia pipas", brand: "Passola", required: 59 },
+            { category: "Manualidades y Varios", name: "Sacapunta doble uso metalico", brand: "Passola", required: 754 },
+            { category: "Manualidades y Varios", name: "Juego Geometrico", brand: "Apolo", required: 852 },
+            { category: "Manualidades y Varios", name: "Compas escolar", brand: "Pelikan", required: 491 },
+            { category: "Manualidades y Varios", name: "Cinta masking", brand: "Fantape", required: 379 },
+            { category: "Manualidades y Varios", name: "Corrector liquido", brand: "BIC", required: 344 },
+            { category: "Manualidades y Varios", name: "Cinta adhesiva scotch", brand: "Jeff", required: 162 },
+            { category: "Organización", name: "Carpeta tipo acordeón", brand: "Lancer", required: 59 },
+            { category: "Organización", name: "Carpeta tipo sobre, tamaño A4", brand: "Passola", required: 174 },
+            { category: "Organización", name: "Carpeta plástica con vincha", brand: "Passola", required: 642 },
+            { category: "Organización", name: "Carpeta de carton con vincha", brand: "Passola", required: 688 },
+            { category: "Aseo Personal", name: "Paquete pañitos humedos x 100 unidades", brand: "Pequeñin", required: 118 },
+            { category: "Aseo Personal", name: "Papel higienico paquete por 4", brand: "Familia", required: 118 },
+            { category: "Aseo Personal", name: "Jabon liquido 260 ml", brand: "Palmolive", required: 118 },
+            { category: "Aseo Personal", name: "Alcohol antiséptico 500 ml", brand: "Lira", required: 118 },
+            { category: "Didácticos", name: "Rompecabezas de 25 piezas tamaño A4", brand: "Passola", required: 118 },
         ].map((item, index) => ({...item, id: index, stock: 0, itemNumber: index + 1 }));
 
         const tableBody = document.getElementById('materials-table-body');
@@ -228,7 +230,7 @@
                     currentCategory = item.category;
                     const categoryRow = document.createElement('tr');
                     categoryRow.className = 'category-header';
-                    categoryRow.innerHTML = `<td colspan="5" class="px-6 py-3 text-sm text-gray-700">${currentCategory}</td>`;
+                    categoryRow.innerHTML = `<td colspan="6" class="px-6 py-3 text-sm text-gray-700">${currentCategory}</td>`;
                     tableBody.appendChild(categoryRow);
                 }
                 const toBuy = Math.max(0, item.required - item.stock);
@@ -237,6 +239,7 @@
                 row.innerHTML = `
                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${item.itemNumber}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.brand}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${item.required}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                         <input type="number" min="0" value="${item.stock}" data-id="${item.id}" class="stock-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -290,18 +293,18 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Material,Cantidad a Comprar\n"; // Encabezados del CSV
+            csvContent += "Material,Marca,Cantidad a Comprar\n"; // Encabezados del CSV
 
             itemsToBuy.forEach(item => {
                 const toBuy = item.required - item.stock;
-                const row = `"${item.name}",${toBuy}`;
+                const row = `"${item.name}","${item.brand}",${toBuy}`;
                 csvContent += row + "\n";
             });
 
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "pedido_utiles.csv");
+            link.setAttribute("download", "pedido_utiles_geopark.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
